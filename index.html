@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Books">
+    <meta name="theme-color" content="#5d4037">
+    <link rel="manifest" href="manifest.json">
+    <title>BookLog</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', sans-serif;
+            background: linear-gradient(135deg, #d7ccc8 0%, #bcaaa4 100%);
+            min-height: 100vh;
+            padding: 20px;
+            padding-bottom: 80px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #5d4037;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .add-book-btn {
+            width: 100%;
+            padding: 16px;
+            background: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #6b4700;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            margin-bottom: 30px;
+            transition: transform 0.2s;
+        }
+
+        .add-book-btn:active {
+            transform: scale(0.98);
+        }
+
+        .section {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .book-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .book-header-left {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .book-header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .drag-handle {
+            background: transparent;
+            border: none;
+            width: 28px;
+            height: 28px;
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 18px;
+            flex-shrink: 0;
+            user-select: none;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .book-item.dragging {
+            opacity: 0.5;
+            background: #e8e8e8;
+        }
+
+        .book-item.drag-over {
+            border-top: 3px solid #667eea;
+        }
+
+        /* Ensure scrollable areas */
+        .completed-book-header-row,
+        .completed-book-info-row {
+            pointer-events: auto;
+        }
+
+        .collapse-btn {
+            background: #f3f4f6;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 14px;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .collapse-btn:hover {
+            background: #e5e7eb;
+        }
+
+        .collapse-btn:active {
+            opacity: 0.7;
+        }
+
+        .book-item {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            transition: all 0.2s;
+            border: 2px solid #e8e8e8;
+            position: relative;
+        }
+
+        .book-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .book-item.collapsed .book-info,
+        .book-item.collapsed .progress-container,
+        .book-item.collapsed .memo-section,
+        .book-item.collapsed .complete-btn {
+            display: none;
+        }
+
+        .book-item.collapsed .completed-book-header-row {
+            display: none;
+        }
+
+        .book-item.collapsed .completed-book-meta-row {
+            display: none;
+        }
+
+        .book-item.collapsed .completed-book-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .book-item.collapsed .completed-book-info-row {
+            margin-bottom: 0;
+        }
+
+        .book-item.collapsed .completed-book-item > .book-header-right {
+            display: flex !important;
+        }
+
+        .book-item.collapsed {
+            padding: 10px 16px;
+        }
+
+        .book-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .book-header-left {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #999;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px 8px;
+            line-height: 1;
+            margin-left: 8px;
+            transition: color 0.2s;
+            flex-shrink: 0;
+        }
+
+        .delete-btn:hover {
+            color: #ef4444;
+        }
+
+        .delete-btn:active {
+            opacity: 0.6;
+        }
+
+        .book-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .book-info {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        /* Completed book compact layout */
+        .completed-book-item {
+            background: transparent;
+            border-radius: 0;
+            padding: 0;
+            margin-bottom: 0;
+        }
+
+        .completed-book-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .completed-book-info-row {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .completed-book-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .completed-book-meta-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .completed-book-author {
+            font-size: 12px;
+            color: #666;
+            flex: 0 1 auto;
+            min-width: 0;
+        }
+
+        .completed-book-pages {
+            font-size: 11px;
+            color: #999;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .completed-date-compact {
+            font-size: 12px;
+            color: #10b981;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background 0.2s;
+            display: inline-block;
+        }
+
+        .completed-date-compact:hover {
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .completed-date-compact:active {
+            background: rgba(16, 185, 129, 0.2);
+        }
+
+        /* Memo section */
+        .memo-section {
+            margin-top: 12px;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 12px;
+        }
+
+        .reread-section {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding: 8px 12px;
+            background: #fff;
+            border-radius: 8px;
+        }
+
+        .reread-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #666;
+        }
+
+        .reread-input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .reread-input {
+            width: 60px;
+            padding: 6px 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .reread-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .reread-display {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .memo-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            padding: 8px;
+            background: #fff;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            user-select: none;
+        }
+
+        .memo-toggle:active {
+            background: #f9fafb;
+        }
+
+        .memo-toggle-text {
+            font-size: 14px;
+            font-weight: 600;
+            color: #10b981;
+        }
+
+        .memo-toggle-icon {
+            font-size: 12px;
+            color: #10b981;
+            transition: transform 0.2s;
+        }
+
+        .memo-toggle-icon.open {
+            transform: rotate(90deg);
+        }
+
+        .memo-content {
+            display: none;
+            animation: slideDown 0.2s ease-out;
+        }
+
+        .memo-content.open {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .memo-textarea {
+            width: 100%;
+            min-height: 250px;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            margin-bottom: 8px;
+        }
+
+        .memo-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .memo-save-btn {
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .memo-save-btn:active {
+            opacity: 0.8;
+        }
+
+        .memo-copy-btn {
+            padding: 8px 16px;
+            background: #e5e7eb;
+            color: #666;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 8px;
+        }
+
+        .memo-copy-btn:active {
+            opacity: 0.8;
+        }
+
+        .memo-buttons {
+            display: flex;
+            align-items: center;
+        }
+
+        .memo-display {
+            background: #fff;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #333;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .progress-container {
+            margin-top: 12px;
+        }
+
+        .progress-input-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 12px;
+        }
+
+        .progress-input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .update-btn {
+            padding: 10px 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .update-btn:active {
+            opacity: 0.8;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+
+        .complete-btn {
+            width: 100%;
+            padding: 10px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 12px;
+        }
+
+        .complete-btn:active {
+            opacity: 0.8;
+        }
+
+        .completed-date {
+            font-size: 13px;
+            color: #10b981;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 30px 20px;
+            font-size: 14px;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            animation: fadeIn 0.2s;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            width: 100%;
+            max-width: 400px;
+            animation: slideUp 0.3s;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .modal-btn-cancel {
+            background: #f3f4f6;
+            color: #666;
+        }
+
+        .modal-btn-submit {
+            background: #667eea;
+            color: white;
+        }
+
+        .modal-btn:active {
+            opacity: 0.8;
+        }
+
+        .dialog {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+        }
+
+        .dialog.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .dialog-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            width: 100%;
+            max-width: 320px;
+            text-align: center;
+        }
+
+        .dialog-message {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 24px;
+        }
+
+        .dialog-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .dialog-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .dialog-btn-no {
+            background: #f3f4f6;
+            color: #666;
+        }
+
+        .dialog-btn-yes {
+            background: #10b981;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📚 Books</h1>
+        
+        <button class="add-book-btn" onclick="openAddBookModal()">
+            ＋ 本を追加する
+        </button>
+
+        <div class="section">
+            <div class="section-title">📖 読んでいる本</div>
+            <div id="reading-list"></div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">✅ 読み終わった本</div>
+            <div id="completed-list"></div>
+        </div>
+    </div>
+
+    <!-- Add Book Modal -->
+    <div id="addBookModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">本を追加</div>
+            <form id="addBookForm">
+                <div class="form-group">
+                    <label class="form-label">本のタイトル</label>
+                    <input type="text" class="form-input" id="bookTitle" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">著者</label>
+                    <input type="text" class="form-input" id="bookAuthor" placeholder="任意">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">総ページ数</label>
+                        <input type="number" class="form-input" id="totalPages" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">目標日数</label>
+                        <input type="number" class="form-input" id="targetDays" min="1" required>
+                    </div>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="modal-btn modal-btn-cancel" onclick="closeAddBookModal()">キャンセル</button>
+                    <button type="submit" class="modal-btn modal-btn-submit">追加</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Complete Book Dialog -->
+    <div id="completeDialog" class="dialog">
+        <div class="dialog-content">
+            <div class="dialog-message">この本を読み終えますか？</div>
+            <div class="dialog-buttons">
+                <button class="dialog-btn dialog-btn-no" onclick="closeCompleteDialog()">いいえ</button>
+                <button class="dialog-btn dialog-btn-yes" onclick="confirmComplete()">はい</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Book Dialog -->
+    <div id="deleteDialog" class="dialog">
+        <div class="dialog-content">
+            <div class="dialog-message">この本を削除しますか？</div>
+            <div class="dialog-buttons">
+                <button class="dialog-btn dialog-btn-no" onclick="closeDeleteDialog()">いいえ</button>
+                <button class="dialog-btn dialog-btn-yes" onclick="confirmDelete()">はい</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Date Modal -->
+    <div id="editDateModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">読了日を編集</div>
+            <div class="form-group">
+                <label class="form-label">読了日</label>
+                <input type="date" class="form-input" id="editDateInput">
+            </div>
+            <div class="modal-buttons">
+                <button type="button" class="modal-btn modal-btn-cancel" onclick="closeEditDateModal()">キャンセル</button>
+                <button type="button" class="modal-btn modal-btn-submit" onclick="confirmEditDate()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let books = {
+            reading: [],
+            completed: []
+        };
+        let currentCompleteBookId = null;
+        let openMemoIds = new Set(); // Track which memos are open
+        let collapsedBookIds = new Set(); // Track which books are collapsed
+        let draggedElement = null;
+        let draggedIndex = null;
+        let draggedList = null;
+        let currentEditDateBookId = null;
+
+        // Load data from localStorage
+        function loadData() {
+            const saved = localStorage.getItem('readingTrackerData');
+            if (saved) {
+                books = JSON.parse(saved);
+            }
+            
+            // Load collapsed state
+            const savedCollapsed = localStorage.getItem('collapsedBookIds');
+            if (savedCollapsed) {
+                collapsedBookIds = new Set(JSON.parse(savedCollapsed));
+            }
+            
+            renderBooks();
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('readingTrackerData', JSON.stringify(books));
+            // Save collapsed state
+            localStorage.setItem('collapsedBookIds', JSON.stringify([...collapsedBookIds]));
+        }
+
+        // Open add book modal
+        function openAddBookModal() {
+            document.getElementById('addBookModal').classList.add('active');
+        }
+
+        // Close add book modal
+        function closeAddBookModal() {
+            document.getElementById('addBookModal').classList.remove('active');
+            document.getElementById('addBookForm').reset();
+        }
+
+        // Add book form submission
+        document.getElementById('addBookForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const title = document.getElementById('bookTitle').value;
+            const author = document.getElementById('bookAuthor').value;
+            const totalPages = parseInt(document.getElementById('totalPages').value);
+            const targetDays = parseInt(document.getElementById('targetDays').value);
+            const pagesPerDay = Math.ceil(totalPages / targetDays);
+
+            const newBook = {
+                id: Date.now(),
+                title: title,
+                author: author,
+                totalPages: totalPages,
+                targetDays: targetDays,
+                pagesPerDay: pagesPerDay,
+                currentPage: 0,
+                memo: '',
+                rereadCount: 0
+            };
+
+            books.reading.push(newBook);
+            saveData();
+            renderBooks();
+            closeAddBookModal();
+        });
+
+        // Update progress
+        function updateProgress(bookId) {
+            const input = document.getElementById(`progress-${bookId}`);
+            const currentPage = parseInt(input.value) || 0;
+            
+            const book = books.reading.find(b => b.id === bookId);
+            if (book) {
+                book.currentPage = Math.min(currentPage, book.totalPages);
+                saveData();
+                renderBooks();
+            }
+        }
+
+        // Toggle memo
+        function toggleMemo(bookId) {
+            const content = document.getElementById(`memo-content-${bookId}`);
+            const icon = document.getElementById(`memo-icon-${bookId}`);
+            
+            if (content.classList.contains('open')) {
+                content.classList.remove('open');
+                icon.classList.remove('open');
+                openMemoIds.delete(bookId);
+            } else {
+                content.classList.add('open');
+                icon.classList.add('open');
+                openMemoIds.add(bookId);
+            }
+        }
+
+        // Save memo
+        function saveMemo(bookId, isCompleted = false) {
+            const textarea = document.getElementById(`memo-textarea-${bookId}`);
+            const memoText = textarea.value;
+            
+            const bookList = isCompleted ? books.completed : books.reading;
+            const book = bookList.find(b => b.id === bookId);
+            
+            if (book) {
+                book.memo = memoText;
+                saveData();
+                // Don't call renderBooks() to avoid closing the memo
+                // Just update the data silently
+            }
+        }
+
+        // Delete book
+        let currentDeleteBookId = null;
+        let isDeleteFromCompleted = false;
+
+        function openDeleteDialog(bookId, isCompleted = false) {
+            currentDeleteBookId = bookId;
+            isDeleteFromCompleted = isCompleted;
+            document.getElementById('deleteDialog').classList.add('active');
+        }
+
+        function closeDeleteDialog() {
+            document.getElementById('deleteDialog').classList.remove('active');
+            currentDeleteBookId = null;
+            isDeleteFromCompleted = false;
+        }
+
+        function confirmDelete() {
+            if (currentDeleteBookId) {
+                const bookList = isDeleteFromCompleted ? books.completed : books.reading;
+                const bookIndex = bookList.findIndex(b => b.id === currentDeleteBookId);
+                if (bookIndex !== -1) {
+                    bookList.splice(bookIndex, 1);
+                    saveData();
+                    renderBooks();
+                }
+            }
+            closeDeleteDialog();
+        }
+
+        // Open complete dialog
+        function openCompleteDialog(bookId) {
+            currentCompleteBookId = bookId;
+            document.getElementById('completeDialog').classList.add('active');
+        }
+
+        // Close complete dialog
+        function closeCompleteDialog() {
+            document.getElementById('completeDialog').classList.remove('active');
+            currentCompleteBookId = null;
+        }
+
+        // Confirm complete
+        function confirmComplete() {
+            if (currentCompleteBookId) {
+                const bookIndex = books.reading.findIndex(b => b.id === currentCompleteBookId);
+                if (bookIndex !== -1) {
+                    const book = books.reading[bookIndex];
+                    book.completedDate = new Date().toLocaleDateString('ja-JP');
+                    book.rereadCount = book.rereadCount || 0; // Initialize reread count
+                    books.completed.unshift(book);
+                    books.reading.splice(bookIndex, 1);
+                    saveData();
+                    renderBooks();
+                }
+            }
+            closeCompleteDialog();
+        }
+
+        // Render books
+        function renderBooks() {
+            // Render reading list
+            const readingList = document.getElementById('reading-list');
+            if (books.reading.length === 0) {
+                readingList.innerHTML = '<div class="empty-state">読んでいる本がありません</div>';
+            } else {
+                readingList.innerHTML = books.reading.map((book, index) => {
+                    const progress = (book.currentPage / book.totalPages) * 100;
+                    const isCollapsed = collapsedBookIds.has(book.id);
+                    const collapseClass = isCollapsed ? ' collapsed' : '';
+                    const collapseIcon = isCollapsed ? '◱' : '◲';
+                    return `
+                        <div class="book-item${collapseClass}">
+                            <div class="book-header">
+                                <div class="book-header-left">
+                                    <div class="book-title">${book.title}</div>
+                                </div>
+                                <div class="book-header-right">
+                                    <button class="drag-handle" 
+                                            onmousedown="handleDragStart(event, ${index}, 'reading')" 
+                                            onmouseup="handleDragEnd(event)"
+                                            ontouchstart="handleDragStart(event, ${index}, 'reading')"
+                                            ontouchend="handleDragEnd(event)"
+                                            title="順番を変更">⋮⋮</button>
+                                    <button class="collapse-btn" onclick="toggleCollapse(${book.id})" title="${isCollapsed ? '展開' : '折りたたむ'}">${collapseIcon}</button>
+                                    <button class="delete-btn" onclick="openDeleteDialog(${book.id}, false)">×</button>
+                                </div>
+                            </div>
+                            ${book.author ? `<div class="book-info">${book.author}</div>` : ''}
+                            <div class="book-info"> 総ページ数: ${book.totalPages}ページ</div>
+                            <div class="book-info"> 目標: ${book.targetDays}日で読了</div>
+                            <div class="book-info"> 1日あたり: ${book.pagesPerDay}ページ</div>
+                            <div class="progress-container">
+                                <div class="book-info">${book.currentPage} / ${book.totalPages}ページ (${Math.round(progress)}%)</div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: ${progress}%"></div>
+                                </div>
+                                <div class="progress-input-group">
+                                    <input 
+                                        type="number" 
+                                        class="progress-input" 
+                                        id="progress-${book.id}"
+                                        placeholder="現在のページ"
+                                        min="0"
+                                        max="${book.totalPages}"
+                                        value="${book.currentPage}"
+                                    >
+                                    <button class="update-btn" onclick="updateProgress(${book.id})">更新</button>
+                                </div>
+                            </div>
+                            <div class="memo-section">
+                                <div class="memo-toggle" onclick="toggleMemo(${book.id})">
+                                    <span class="memo-toggle-text">📝 メモ</span>
+                                    <span class="memo-toggle-icon" id="memo-icon-${book.id}">►</span>
+                                </div>
+                                <div class="memo-content" id="memo-content-${book.id}">
+                                    <textarea 
+                                        class="memo-textarea" 
+                                        id="memo-textarea-${book.id}"
+                                        placeholder="この本についてのメモを書く..."
+                                    >${book.memo || ''}</textarea>
+                                    <div class="memo-buttons">
+                                        <button class="memo-copy-btn" onclick="copyMemo(${book.id})">コピー</button>
+                                        <button class="memo-save-btn" onclick="saveMemo(${book.id})">保存</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="complete-btn" onclick="openCompleteDialog(${book.id})">読了</button>
+                        </div>
+                    `;
+                }).join('');
+                
+                // Add drag event listeners
+                const readingListEl = document.getElementById('reading-list');
+                readingListEl.addEventListener('mousemove', handleDragOver);
+                readingListEl.addEventListener('touchmove', handleDragOver);
+                
+                // Restore open memo states
+                openMemoIds.forEach(bookId => {
+                    const content = document.getElementById(`memo-content-${bookId}`);
+                    const icon = document.getElementById(`memo-icon-${bookId}`);
+                    if (content && icon) {
+                        content.classList.add('open');
+                        icon.classList.add('open');
+                    }
+                });
+            }
+
+            // Render completed list
+            const completedList = document.getElementById('completed-list');
+            if (books.completed.length === 0) {
+                completedList.innerHTML = '<div class="empty-state">読み終わった本がありません</div>';
+            } else {
+                completedList.innerHTML = books.completed.map((book, index) => {
+                    const isCollapsed = collapsedBookIds.has(book.id);
+                    const collapseClass = isCollapsed ? ' collapsed' : '';
+                    const collapseIcon = isCollapsed ? '◱' : '◲';
+                    return `
+                    <div class="book-item${collapseClass}">
+                        <div class="completed-book-item">
+                            <div class="completed-book-header-row">
+                                <div class="completed-date-compact" onclick="openEditDateModal(${book.id})" title="日付を編集">
+                                    ✨ ${book.completedDate}
+                                </div>
+                                <div class="book-header-right">
+                                    <button class="drag-handle" 
+                                            onmousedown="handleDragStart(event, ${index}, 'completed')" 
+                                            onmouseup="handleDragEnd(event)"
+                                            ontouchstart="handleDragStart(event, ${index}, 'completed')"
+                                            ontouchend="handleDragEnd(event)"
+                                            title="順番を変更">⋮⋮</button>
+                                    <button class="collapse-btn" onclick="toggleCollapse(${book.id})" title="${isCollapsed ? '展開' : '折りたたむ'}">${collapseIcon}</button>
+                                    <button class="delete-btn" onclick="openDeleteDialog(${book.id}, true)">×</button>
+                                </div>
+                            </div>
+                            <div class="completed-book-info-row">
+                                <div class="completed-book-title">${book.title}</div>
+                                <div class="completed-book-meta-row">
+                                    <div class="completed-book-author">${book.author || ''}</div>
+                                    <div class="completed-book-pages">${book.totalPages}ページ</div>
+                                </div>
+                            </div>
+                            <div class="book-header-right" style="display: none;">
+                                <button class="drag-handle" 
+                                        onmousedown="handleDragStart(event, ${index}, 'completed')" 
+                                        onmouseup="handleDragEnd(event)"
+                                        ontouchstart="handleDragStart(event, ${index}, 'completed')"
+                                        ontouchend="handleDragEnd(event)"
+                                        title="順番を変更">⋮⋮</button>
+                                <button class="collapse-btn" onclick="toggleCollapse(${book.id})" title="${isCollapsed ? '展開' : '折りたたむ'}">${collapseIcon}</button>
+                                <button class="delete-btn" onclick="openDeleteDialog(${book.id}, true)">×</button>
+                            </div>
+                        </div>
+                        <div class="memo-section">
+                            <div class="reread-section">
+                                <div class="reread-label">📖 再読</div>
+                                <div class="reread-input-group">
+                                    <input 
+                                        type="number" 
+                                        class="reread-input" 
+                                        id="reread-${book.id}"
+                                        min="0"
+                                        max="99"
+                                        value="${book.rereadCount || 0}"
+                                        onchange="saveRereadCount(${book.id})"
+                                        oninput="this.value = Math.max(0, Math.min(99, this.value))"
+                                    >
+                                    <span class="reread-display" id="reread-display-${book.id}">${(book.rereadCount || 0) > 0 ? `(${book.rereadCount}回目)` : ''}</span>
+                                </div>
+                            </div>
+                            <div class="memo-toggle" onclick="toggleMemo(${book.id})">
+                                <span class="memo-toggle-text">📝 メモ</span>
+                                <span class="memo-toggle-icon" id="memo-icon-${book.id}">►</span>
+                            </div>
+                            <div class="memo-content" id="memo-content-${book.id}">
+                                <textarea 
+                                    class="memo-textarea" 
+                                    id="memo-textarea-${book.id}"
+                                    placeholder="この本についてのメモを書く..."
+                                >${book.memo || ''}</textarea>
+                                <div class="memo-buttons">
+                                    <button class="memo-copy-btn" onclick="copyMemo(${book.id})">コピー</button>
+                                    <button class="memo-save-btn" onclick="saveMemo(${book.id}, true)">保存</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `}).join('');
+                
+                // Add drag event listeners
+                const completedListEl = document.getElementById('completed-list');
+                completedListEl.addEventListener('mousemove', handleDragOver);
+                completedListEl.addEventListener('touchmove', handleDragOver);
+                
+                // Restore open memo states for completed books
+                openMemoIds.forEach(bookId => {
+                    const content = document.getElementById(`memo-content-${bookId}`);
+                    const icon = document.getElementById(`memo-icon-${bookId}`);
+                    if (content && icon) {
+                        content.classList.add('open');
+                        icon.classList.add('open');
+                    }
+                });
+            }
+        }
+
+        // Toggle individual book collapse
+        function toggleCollapse(bookId) {
+            if (collapsedBookIds.has(bookId)) {
+                collapsedBookIds.delete(bookId);
+            } else {
+                collapsedBookIds.add(bookId);
+            }
+            saveData(); // Save collapsed state
+            renderBooks();
+        }
+
+        // Drag and drop functions
+        let dragStartY = 0;
+        let isDragging = false;
+        let dragThreshold = 5; // pixels to move before considering it a drag
+        
+        function handleDragStart(e, index, listType) {
+            const bookItem = e.target.closest('.book-item');
+            if (!bookItem) return;
+            
+            draggedElement = bookItem;
+            draggedIndex = index;
+            draggedList = listType;
+            dragStartY = e.clientY || (e.touches && e.touches[0].clientY);
+            isDragging = false;
+            
+            // Add move listener to detect actual drag
+            const moveHandler = (moveEvent) => {
+                const currentY = moveEvent.clientY || (moveEvent.touches && moveEvent.touches[0].clientY);
+                if (Math.abs(currentY - dragStartY) > dragThreshold) {
+                    isDragging = true;
+                    if (draggedElement) {
+                        draggedElement.classList.add('dragging');
+                    }
+                    document.removeEventListener('mousemove', moveHandler);
+                    document.removeEventListener('touchmove', moveHandler);
+                }
+            };
+            
+            document.addEventListener('mousemove', moveHandler);
+            document.addEventListener('touchmove', moveHandler);
+            
+            // Clean up listener on release
+            const cleanupHandler = () => {
+                document.removeEventListener('mousemove', moveHandler);
+                document.removeEventListener('touchmove', moveHandler);
+                document.removeEventListener('mouseup', cleanupHandler);
+                document.removeEventListener('touchend', cleanupHandler);
+            };
+            
+            document.addEventListener('mouseup', cleanupHandler, { once: true });
+            document.addEventListener('touchend', cleanupHandler, { once: true });
+        }
+
+        function handleDragOver(e) {
+            if (!isDragging || !draggedElement) return;
+            
+            e.preventDefault();
+            
+            const container = e.currentTarget;
+            const afterElement = getDragAfterElement(container, e.clientY || (e.touches && e.touches[0].clientY));
+            
+            // Remove all drag-over classes
+            container.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+            
+            if (afterElement == null) {
+                container.appendChild(draggedElement);
+            } else {
+                container.insertBefore(draggedElement, afterElement);
+                afterElement.classList.add('drag-over');
+            }
+        }
+
+        function handleDragEnd(e) {
+            if (!draggedElement) return;
+            
+            // Only process if it was actually a drag
+            if (isDragging) {
+                const listId = draggedList === 'reading' ? 'reading-list' : 'completed-list';
+                const container = document.getElementById(listId);
+                if (container) {
+                    const items = [...container.querySelectorAll('.book-item')];
+                    const newIndex = items.indexOf(draggedElement);
+                    
+                    // Remove drag-over classes
+                    container.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+                    
+                    if (newIndex !== -1 && newIndex !== draggedIndex) {
+                        const bookList = draggedList === 'reading' ? books.reading : books.completed;
+                        const [movedBook] = bookList.splice(draggedIndex, 1);
+                        bookList.splice(newIndex, 0, movedBook);
+                        saveData();
+                    }
+                }
+                
+                if (draggedElement) {
+                    draggedElement.classList.remove('dragging');
+                }
+                
+                renderBooks();
+            }
+            
+            draggedElement = null;
+            draggedIndex = null;
+            draggedList = null;
+            isDragging = false;
+        }
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.book-item:not(.dragging)')];
+            
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        // Copy memo function
+        function copyMemo(bookId) {
+            const textarea = document.getElementById(`memo-textarea-${bookId}`);
+            if (textarea && textarea.value) {
+                navigator.clipboard.writeText(textarea.value).then(() => {
+                    // Visual feedback
+                    const copyBtn = event.target;
+                    const originalText = copyBtn.textContent;
+                    copyBtn.textContent = 'コピー済み';
+                    setTimeout(() => {
+                        copyBtn.textContent = originalText;
+                    }, 1500);
+                }).catch(err => {
+                    console.error('コピーに失敗しました:', err);
+                    alert('コピーに失敗しました');
+                });
+            }
+        }
+
+        // Save reread count
+        function saveRereadCount(bookId) {
+            const input = document.getElementById(`reread-${bookId}`);
+            const count = parseInt(input.value) || 0;
+            
+            // Limit between 0 and 99
+            const validCount = Math.max(0, Math.min(99, count));
+            input.value = validCount; // Update input to valid value
+            
+            const book = books.completed.find(b => b.id === bookId);
+            if (book) {
+                book.rereadCount = validCount;
+                saveData();
+                // Update display without full re-render
+                const display = document.getElementById(`reread-display-${bookId}`);
+                if (display) {
+                    display.textContent = validCount > 0 ? `(${validCount}回目)` : '';
+                }
+            }
+        }
+
+        // Edit date functions
+        function openEditDateModal(bookId) {
+            currentEditDateBookId = bookId;
+            const book = books.completed.find(b => b.id === bookId);
+            if (book) {
+                // Convert Japanese date format to YYYY-MM-DD
+                const dateParts = book.completedDate.split('/');
+                if (dateParts.length === 3) {
+                    const formattedDate = `${dateParts[0]}-${dateParts[1].padStart(2, '0')}-${dateParts[2].padStart(2, '0')}`;
+                    document.getElementById('editDateInput').value = formattedDate;
+                }
+            }
+            document.getElementById('editDateModal').classList.add('active');
+        }
+
+        function closeEditDateModal() {
+            document.getElementById('editDateModal').classList.remove('active');
+            currentEditDateBookId = null;
+        }
+
+        function confirmEditDate() {
+            if (currentEditDateBookId) {
+                const newDate = document.getElementById('editDateInput').value;
+                if (newDate) {
+                    const book = books.completed.find(b => b.id === currentEditDateBookId);
+                    if (book) {
+                        // Convert YYYY-MM-DD to Japanese format
+                        const date = new Date(newDate);
+                        book.completedDate = `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
+                        saveData();
+                        renderBooks();
+                    }
+                }
+            }
+            closeEditDateModal();
+        }
+
+        // Initialize app
+        loadData();
+    </script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            let refreshing = false;
+
+            // Service Workerの登録
+            navigator.serviceWorker.register('./service-worker.js')
+                .then((registration) => {
+                    console.log('Service Worker registered:', registration);
+
+                    // 更新チェック
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // 新しいバージョンが利用可能
+                                if (confirm('新しいバージョンが利用可能です。更新しますか？')) {
+                                    newWorker.postMessage({ type: 'SKIP_WAITING' });
+                                }
+                            }
+                        });
+                    });
+
+                    // 定期的に更新をチェック（1時間ごと）
+                    setInterval(() => {
+                        registration.update();
+                    }, 60 * 60 * 1000);
+                })
+                .catch((error) => {
+                    console.log('Service Worker registration failed:', error);
+                });
+
+            // Service Workerの制御が変わったらリロード
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!refreshing) {
+                    refreshing = true;
+                    window.location.reload();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
