@@ -35,33 +35,6 @@
             margin-bottom: 30px;
             font-size: 28px;
             text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            position: relative;
-        }
-
-        .reload-btn {
-            position: absolute;
-            top: 0;
-            right: 0;
-            background: rgba(255, 255, 255, 0.3);
-            border: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            color: #5d4037;
-            transition: all 0.2s;
-        }
-
-        .reload-btn:hover {
-            background: rgba(255, 255, 255, 0.5);
-        }
-
-        .reload-btn:active {
-            transform: rotate(180deg);
         }
 
         .add-book-btn {
@@ -757,10 +730,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>
-            📚 Books
-            <button class="reload-btn" onclick="location.reload()" title="リロード">🔄</button>
-        </h1>
+        <h1>📚 Books</h1>
         
         <button class="add-book-btn" onclick="openAddBookModal()">
             ＋ 本を追加する
