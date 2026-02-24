@@ -339,12 +339,13 @@
         }
 
         .reread-input {
-            width: 60px;
+            width: 70px;
             padding: 6px 8px;
             border: 2px solid #e0e0e0;
             border-radius: 6px;
             font-size: 14px;
-            text-align: center;
+            background: white;
+            cursor: pointer;
         }
 
         .reread-input:focus {
@@ -1131,17 +1132,16 @@
                             <div class="reread-section">
                                 <div class="reread-label">📖 再読</div>
                                 <div class="reread-input-group">
-                                    <input 
-                                        type="number" 
+                                    <select 
                                         class="reread-input" 
-                                        id="reread-${book.id}"
-                                        min="0"
-                                        max="99"
-                                        value="${book.rereadCount || 0}"
-                                        onchange="saveRereadCount(${book.id})"
-                                        oninput="this.value = Math.max(0, Math.min(99, this.value))"
+                                        id="reread-\${book.id}"
+                                        onchange="saveRereadCount(\${book.id})"
                                     >
-                                    <span class="reread-display" id="reread-display-${book.id}">${(book.rereadCount || 0) > 0 ? `(${book.rereadCount}回目)` : ''}</span>
+                                        ${Array.from({length: 100}, (_, i) => 
+                                            `<option value="${i}" ${i === (book.rereadCount || 0) ? 'selected' : ''}>${i}</option>`
+                                        ).join('')}
+                                    </select>
+                                    <span class="reread-display" id="reread-display-\${book.id}">\${(book.rereadCount || 0) > 0 ? \`(\${book.rereadCount}回目)\` : ''}</span>
                                 </div>
                             </div>
                             <div class="memo-toggle" onclick="toggleMemo(${book.id})">
@@ -1324,21 +1324,17 @@
 
         // Save reread count
         function saveRereadCount(bookId) {
-            const input = document.getElementById(`reread-${bookId}`);
-            const count = parseInt(input.value) || 0;
-            
-            // Limit between 0 and 99
-            const validCount = Math.max(0, Math.min(99, count));
-            input.value = validCount; // Update input to valid value
+            const select = document.getElementById(`reread-${bookId}`);
+            const count = parseInt(select.value);
             
             const book = books.completed.find(b => b.id === bookId);
             if (book) {
-                book.rereadCount = validCount;
+                book.rereadCount = count;
                 saveData();
                 // Update display without full re-render
                 const display = document.getElementById(`reread-display-${bookId}`);
                 if (display) {
-                    display.textContent = validCount > 0 ? `(${validCount}回目)` : '';
+                    display.textContent = count > 0 ? `(${count}回目)` : '';
                 }
             }
         }
