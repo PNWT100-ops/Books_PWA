@@ -1134,14 +1134,14 @@
                                 <div class="reread-input-group">
                                     <select 
                                         class="reread-input" 
-                                        id="reread-\${book.id}"
-                                        onchange="saveRereadCount(\${book.id})"
+                                        id="reread-${book.id}"
+                                        onchange="saveRereadCount(${book.id})"
                                     >
                                         ${Array.from({length: 100}, (_, i) => 
                                             `<option value="${i}" ${i === (book.rereadCount || 0) ? 'selected' : ''}>${i}</option>`
                                         ).join('')}
                                     </select>
-                                    <span class="reread-display" id="reread-display-\${book.id}">\${(book.rereadCount || 0) > 0 ? \`(\${book.rereadCount}回目)\` : ''}</span>
+                                    <span class="reread-display" id="reread-display-${book.id}">${(book.rereadCount || 0) > 0 ? `(${book.rereadCount}回目)` : ''}</span>
                                 </div>
                             </div>
                             <div class="memo-toggle" onclick="toggleMemo(${book.id})">
